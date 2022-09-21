@@ -83,7 +83,9 @@ void loop() {
 
   // put your main code here, to run repeatedly:
   //lum = analogRead(sensorPin);
-  Serial.println(sensorValue);
+  Serial.println("Luminosity = ");
+  Serial.print(sensorValue);
+  
   delay(1000);
 
 
