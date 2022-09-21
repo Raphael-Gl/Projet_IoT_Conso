@@ -9,18 +9,20 @@ const char *password = "wifideraphael";
 #define AIO_SERVERPORT 1883 // use 8883 for SSL
 
 #define AIO_USERNAME  "Raphael_IoT"
-#define AIO_KEY       "aio_pOan511OPzui0b9ZYwfRFDmalnAU"
+#define AIO_KEY       "aio_nalK87UFCeLQqCNVJr4g42h6CIA5"
 
 WiFiClient client;
 Adafruit_MQTT_Client mqtt(&client, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY);
-Adafruit_MQTT_Publish topic = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/Projet_IoT");
+Adafruit_MQTT_Publish temperature = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/Projet_IoT_temperature");
+Adafruit_MQTT_Publish humidity = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/Projet_IoT_humidity");
+Adafruit_MQTT_Publish brightness = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/Projet_IoT_brightness");
 
 void MQTT_connect();
-void MQTT_publish(float payload);
+void MQTT_publish(float temp, float humid, float bright);
 
 void setup() {
     Serial.begin(9600);
-    delay(10);
+    delay(1000);
 
     // We start by connecting to a WiFi network
     Serial.println();
@@ -29,12 +31,12 @@ void setup() {
     Serial.println(ssid);
 
     WiFi.begin(ssid, password);
-
+    int time=0;
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
         Serial.print(".");
     }
-
+    
     Serial.println("");
     Serial.println("WiFi connected");
 
@@ -43,9 +45,11 @@ void setup() {
 
 void loop()
 {
-  float a=3.14;
-    MQTT_publish(a);
-    delay(10000);
+    float temp1=22.8;
+    float humid1=78.5;
+    float bright1=1546.2;
+    MQTT_publish(temp1,humid1,bright1);
+    delay(15000);
     
 }
 // Function to connect and reconnect as necessary to the MQTT server.
@@ -73,11 +77,13 @@ void MQTT_connect() {
     Serial.println("MQTT Connected!");
 }
 
-void MQTT_publish(float payload) {
+void MQTT_publish(float temp, float humid, float bright) {
   
   MQTT_connect();
   // Now we can publish stuff!
   Serial.println(F("\nSending payload"));
-  topic.publish(payload);
+  temperature.publish(temp);
+  humidity.publish(humid);
+  brightness.publish(bright);
 
 }
