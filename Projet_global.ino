@@ -1,4 +1,5 @@
 #include <WiFi.h>
+#include <HTTPClient.h>
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_Sensor.h>
@@ -15,13 +16,16 @@
 #define AIO_SERVER "io.adafruit.com"
 #define AIO_SERVERPORT 1883 // use 8883 for SSL
 #define AIO_USERNAME  "Raphael_IoT"
-#define AIO_KEY       "aio_JSZs88D8OrN1ydCrDCQE1G8gqO1N"
+#define AIO_KEY       "aio_Kjfo66aC1wfVB2s99gSWqE6eUSs2"
 
-float temp = 0;
-float humid = 0;
-float lumi = 0;
+float temp, humid, lumi = 0;
+float seuilTemp=27.0;
+float seuilhumid=57.0;
+float seuilLumi=4000.0; 
+
 const char *ssid = "Moimoimoimoimoimoi";
 const char *password = "wifideraphael";
+
 Adafruit_BME680 bme; // I2C
 
 WiFiClient client;
@@ -33,6 +37,7 @@ Adafruit_MQTT_Publish brightness = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/f
 void MQTT_connect();
 void MQTT_publish(float temp, float humid, float bright);
 void LED_Blink();
+void sendTelegramMessage(char *message);
 
 void setup() {
   pinMode(PIN_BRIGHTNESS,INPUT);
@@ -40,7 +45,6 @@ void setup() {
   pinMode(PIN_BOUTON, INPUT_PULLDOWN);
   Serial.begin(9600);
   while (!Serial);
-  Serial.println(F("BME680 test"));
 
   if (!bme.begin()) {
     Serial.println("Could not find a valid BME680 sensor, check wiring!");
@@ -54,6 +58,9 @@ void setup() {
   bme.setIIRFilterSize(BME680_FILTER_SIZE_3);
   bme.setGasHeater(320, 150); // 320*C for 150 ms
 
+  Serial.println("En attente de l'appui du bouton");
+  while(!digitalRead(PIN_BOUTON));
+  Serial.println("Bouton appuye, debut du programme"); 
   // We start by connecting to a WiFi network
   Serial.println();
   Serial.println();
@@ -73,21 +80,32 @@ void setup() {
 
 /*------------------loop------------------*/
 void loop() {
-  Serial.println("En attente de l'appui du bouton");
-  while(!digitalRead(PIN_BOUTON));
-  Serial.println("Bouton appuye, debut du programme"); 
-  if (! bme.performReading()) {
-    Serial.println("Failed to perform reading :(");
-    return;
-  }
+    if (! bme.performReading()) {
+        Serial.println("Failed to perform reading :(");
+        return;
+    }
+    //Récupération des données des capteurs 
+    temp=bme.temperature;
+    humid=bme.humidity;
+    lumi=analogRead(PIN_BRIGHTNESS); //faire le calcul pour déterminer la valeur en lux
 
-  temp=bme.temperature;
-  humid=bme.humidity;
-  lumi=analogRead(PIN_BRIGHTNESS); //faire le calcul pour déterminer la valeur en lux
-  MQTT_publish(temp,humid,lumi);
-  LED_Blink();
-  delay(DELAI);
+    MQTT_publish(temp,humid,lumi);
+    LED_Blink();
+    
+    //Test des seuils
+    if (temp>seuilTemp)
+        sendTelegramMessage("ALERTE : La température est trop élevée.");
+    if (humid>seuilhumid)
+        sendTelegramMessage("ALERTE : L'humidité est trop élevée.");
+    if (lumi>seuilLumi)
+        sendTelegramMessage("ALERTE : La luminosité est trop élevée.");
+    
+    delay(DELAI);
 }
+
+
+
+/*---------------functions----------------*/
 
 void MQTT_connect() {
     int8_t ret;
@@ -114,17 +132,40 @@ void MQTT_connect() {
 
 void MQTT_publish(float temp, float humid, float bright) {
   
-  MQTT_connect();
-  // Now we can publish stuff!
-  Serial.println(F("\nSending payload"));
-  temperature.publish(temp);
-  humidity.publish(humid);
-  brightness.publish(bright);
-
+    MQTT_connect();
+    // Now we can publish stuff!
+    Serial.println(F("\nSending payload"));
+    temperature.publish(temp);
+    humidity.publish(humid);
+    brightness.publish(bright);
 }
 
 void LED_Blink() {
   digitalWrite(PIN_LED,HIGH);
   delay(50);
   digitalWrite(PIN_LED,LOW);
+}
+
+void sendTelegramMessage(char *message) {
+    if ((WiFi.status() == WL_CONNECTED)) {
+        HTTPClient http;
+
+        Serial.print("[HTTP] begin...\n");
+        char *url = "https://api.telegram.org/bot5647128476:AAHgpPJ625ZpgXkIayld5_qF4XiXBvTZVtM/sendMessage?chat_id=5288792176&text=";
+        char urlcomplete[strlen(url)+strlen(message)];
+        strcpy(urlcomplete, url);
+        strcat(urlcomplete,message);
+        http.begin(urlcomplete);
+
+        // start connection and send HTTP header
+        int httpCode = http.GET();
+        // httpCode will be negative on error
+        if (httpCode == HTTP_CODE_OK) {
+            Serial.println("Request succesfull");
+        }
+        else {
+            Serial.printf("Failed : %s\n", http.errorToString(httpCode).c_str());
+        }
+        http.end();
+    }
 }
