@@ -7,12 +7,15 @@
 #include "Adafruit_MQTT_Client.h"
 
 #define DELAI 15000
+ 
 #define PIN_BRIGHTNESS 36
 #define PIN_LED 4
+#define PIN_BOUTON 15
+
 #define AIO_SERVER "io.adafruit.com"
 #define AIO_SERVERPORT 1883 // use 8883 for SSL
 #define AIO_USERNAME  "Raphael_IoT"
-#define AIO_KEY       "aio_sHyx61tLp09pE6xAmzebgB4tyfJa"
+#define AIO_KEY       "aio_JSZs88D8OrN1ydCrDCQE1G8gqO1N"
 
 float temp = 0;
 float humid = 0;
@@ -34,6 +37,7 @@ void LED_Blink();
 void setup() {
   pinMode(PIN_BRIGHTNESS,INPUT);
   pinMode(PIN_LED, OUTPUT);
+  pinMode(PIN_BOUTON, INPUT_PULLDOWN);
   Serial.begin(9600);
   while (!Serial);
   Serial.println(F("BME680 test"));
@@ -69,6 +73,9 @@ void setup() {
 
 /*------------------loop------------------*/
 void loop() {
+  Serial.println("En attente de l'appui du bouton");
+  while(!digitalRead(PIN_BOUTON));
+  Serial.println("Bouton appuye, debut du programme"); 
   if (! bme.performReading()) {
     Serial.println("Failed to perform reading :(");
     return;
