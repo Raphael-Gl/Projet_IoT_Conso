@@ -20,9 +20,9 @@
 #define AIO_KEY       "aio_reNb68MSeZEQ1ejGdEBZF5NH5qwd"
 
 float temp, humid, lumi = 0;
-float seuilTemp=27.0;
+float seuilTemp=26.0;
 float seuilhumid=57.0;
-float seuilLumi=4000.0; 
+float seuilLumi=90.0; 
 
 const char *ssid = "Moimoimoimoimoimoi";
 const char *password = "wifideraphael";
