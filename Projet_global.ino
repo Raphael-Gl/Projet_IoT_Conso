@@ -6,6 +6,7 @@
 #include "Adafruit_BME680.h"
 #include "Adafruit_MQTT.h"
 #include "Adafruit_MQTT_Client.h"
+#include <LiquidCrystal_I2C.h>
 
 #define DELAI 15000
  
@@ -16,7 +17,7 @@
 #define AIO_SERVER "io.adafruit.com"
 #define AIO_SERVERPORT 1883 // use 8883 for SSL
 #define AIO_USERNAME  "Raphael_IoT"
-#define AIO_KEY       "aio_Kjfo66aC1wfVB2s99gSWqE6eUSs2"
+#define AIO_KEY       "aio_reNb68MSeZEQ1ejGdEBZF5NH5qwd"
 
 float temp, humid, lumi = 0;
 float seuilTemp=27.0;
@@ -27,6 +28,7 @@ const char *ssid = "Moimoimoimoimoimoi";
 const char *password = "wifideraphael";
 
 Adafruit_BME680 bme; // I2C
+LiquidCrystal_I2C lcd(0x27,20,4);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 
 WiFiClient client;
 Adafruit_MQTT_Client mqtt(&client, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY);
@@ -38,11 +40,23 @@ void MQTT_connect();
 void MQTT_publish(float temp, float humid, float bright);
 void LED_Blink();
 void sendTelegramMessage(char *message);
+void Affiche_data(int temperature, int humidity, int lumen );
 
 void setup() {
   pinMode(PIN_BRIGHTNESS,INPUT);
   pinMode(PIN_LED, OUTPUT);
   pinMode(PIN_BOUTON, INPUT_PULLDOWN);
+                     // initialize the lcd 
+  lcd.init();
+  // Print a message to the LCD.
+  lcd.backlight();
+  lcd.setCursor(1,0);
+  lcd.print("Initialisation");
+  lcd.setCursor(1,1);
+  lcd.print("en cours ");
+  delay(3000);
+  lcd.clear();
+
   Serial.begin(9600);
   while (!Serial);
 
@@ -88,6 +102,7 @@ void loop() {
     temp=bme.temperature;
     humid=bme.humidity;
     lumi=analogRead(PIN_BRIGHTNESS); //faire le calcul pour déterminer la valeur en lux
+    lumi = map(lumi, 2100, 4095, 0, 100); // Réglage en fonction des seuils hauts et bas relevés (valeur min quand le capteur est dans le noir et max devant la lampe)
 
     MQTT_publish(temp,humid,lumi);
     LED_Blink();
@@ -100,9 +115,10 @@ void loop() {
     if (lumi>seuilLumi)
         sendTelegramMessage("ALERTE : La luminosité est trop élevée.");
     
+    Affiche_data(temp,humid,lumi);
+    
     delay(DELAI);
 }
-
 
 
 /*---------------functions----------------*/
@@ -168,4 +184,28 @@ void sendTelegramMessage(char *message) {
         }
         http.end();
     }
+}
+
+void Affiche_data(int temperature, int humidity, int lumen ) {
+    lcd.setCursor(0,0); 
+    lcd.print("Temp");
+    lcd.setCursor(6,0);
+    lcd.print("Hum");
+    lcd.setCursor(11,0);
+    lcd.print("Lumi");
+    lcd.setCursor(0,1);
+    lcd.print("     "); //efface la valeur précédente
+    lcd.setCursor(0,1);
+    lcd.print(temperature,1);
+
+    lcd.setCursor(6,1);
+    lcd.print("     "); //efface la valeur précédente
+    lcd.setCursor(6,1);
+    lcd.print(humidity,1);
+
+    lcd.setCursor(11,1);
+    lcd.print("     "); //efface la valeur précédente
+    lcd.setCursor(11,1);
+    lcd.print(lumen,1);
+
 }
