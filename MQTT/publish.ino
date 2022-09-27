@@ -9,13 +9,16 @@ const char *password = "wifideraphael";
 #define AIO_SERVERPORT 1883 // use 8883 for SSL
 
 #define AIO_USERNAME  "Raphael_IoT"
-#define AIO_KEY       "aio_nalK87UFCeLQqCNVJr4g42h6CIA5"
+#define AIO_KEY       "aio_KCrX64zDGrnrHpgzVTzWw82Wqx9Q"
 
 WiFiClient client;
 Adafruit_MQTT_Client mqtt(&client, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY);
 Adafruit_MQTT_Publish temperature = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/Projet_IoT_temperature");
 Adafruit_MQTT_Publish humidity = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/Projet_IoT_humidity");
 Adafruit_MQTT_Publish brightness = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/Projet_IoT_brightness");
+
+Adafruit_MQTT_Subscribe onoffbutton = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/onoff");
+
 
 void MQTT_connect();
 void MQTT_publish(float temp, float humid, float bright);
@@ -48,6 +51,7 @@ void loop()
     float temp1=22.8;
     float humid1=78.5;
     float bright1=1546.2;
+    MQTT_subscribe();
     MQTT_publish(temp1,humid1,bright1);
     delay(15000);
     
@@ -70,8 +74,7 @@ void MQTT_connect() {
         retries--;
         if (retries == 0) {
             // basically die and wait for WDT to reset me
-            while (1)
-                ;
+            while (1);
         }
     }
     Serial.println("MQTT Connected!");
@@ -85,5 +88,16 @@ void MQTT_publish(float temp, float humid, float bright) {
   temperature.publish(temp);
   humidity.publish(humid);
   brightness.publish(bright);
+
+}
+
+void MQTT_Subscribe() {
+    MQTT_connect();
+    mqtt.subscribe(&onoffbutton);
+    Adafruit_MQTT_Subscribe *subscription;
+    while ((subscription = mqtt.readSubscription(5000))) {
+    if (subscription == &onoffbutton) {
+        Serial.println((char *)onoffbutton.lastread);
+    }
 
 }
