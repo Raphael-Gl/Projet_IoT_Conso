@@ -16,3 +16,10 @@
 - Désactivation et mise en veille à distance par MQTT depuis un dashboard
 
 - Mise en sommeil afin d’optimiser la consommation de l’objet connecté
+
+
+## Mise en place
+Pour reproduire notre projet, vous pouvez récupérer le code final "Projet_global.ino" et le téléverser sur une carte ESP32.  
+
+
+Vous pouvez retrouver les liens vers le [Broker MQTT](https://io.adafruit.com/Raphael_IoT/dashboards/projet-iot-dashboard) afin de mettre en place les différents feeds de récupération des données, ainsi qu'un dashboard pour surveiller en direct les données et mettre fin à l'éxecution du programme.
